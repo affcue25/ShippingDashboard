@@ -6,6 +6,9 @@ export default {
   ],
   theme: {
     extend: {
+      screens: {
+        'xs': '475px',
+      },
       fontFamily: {
         'arabic': ['Cairo', 'Arial', 'sans-serif'],
         'english': ['Inter', 'Arial', 'sans-serif'],

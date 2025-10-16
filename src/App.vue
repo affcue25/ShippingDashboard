@@ -1,7 +1,7 @@
 <template>
   <div id="app" :class="{ 'rtl': $i18n.locale === 'ar' }" class="min-h-screen bg-gray-50">
     <Sidebar ref="sidebar" />
-    <div class="lg:pl-64">
+    <div :class="$i18n.locale === 'ar' ? 'lg:pr-64' : 'lg:pl-64'">
       <Navbar />
       <main class="pt-16">
         <router-view />

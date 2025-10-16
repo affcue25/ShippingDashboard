@@ -1,22 +1,27 @@
 <template>
-  <div class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 border-r border-gray-100"
-       :class="{ 'translate-x-0': sidebarOpen, '-translate-x-full': !sidebarOpen }"
+  <div class="fixed inset-y-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out border-r border-gray-100"
+       :class="[
+         $i18n.locale === 'ar' ? 'right-0 border-r-0 border-l lg:translate-x-0' : 'left-0 lg:translate-x-0',
+         sidebarOpen ? 'translate-x-0' : ($i18n.locale === 'ar' ? 'translate-x-full' : '-translate-x-full')
+       ]"
        style="background-image: radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.05) 1px, transparent 0); background-size: 20px 20px;">
     
     <!-- Sidebar Header -->
-    <div class="flex items-center justify-between h-20 px-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-      <div class="flex items-center">
-        <div class="h-12 w-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25">
-          <svg class="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <div class="flex items-center justify-between h-16 sm:h-20 px-4 sm:px-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white rtl:flex-row-reverse">
+      <div class="flex items-center rtl:flex-row-reverse">
+        <div class="h-10 w-10 sm:h-12 sm:w-12 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-lg shadow-primary-500/25">
+          <svg class="h-5 w-5 sm:h-6 sm:w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
           </svg>
         </div>
-        <div class="ml-4">
-          <h1 class="text-lg font-bold text-gray-900 font-english">
-            Smart Shipping
+        <div class="ml-3 sm:ml-4 rtl:ml-0 rtl:mr-3 rtl:sm:mr-4">
+          <h1 class="text-sm sm:text-lg font-bold text-gray-900" 
+              :class="$i18n.locale === 'ar' ? 'font-arabic' : 'font-english'">
+            {{ $i18n.locale === 'ar' ? 'الشحن الذكي' : 'Smart Shipping' }}
           </h1>
-          <p class="text-xs text-gray-500 font-english">
-            Dashboard
+          <p class="text-xs text-gray-500" 
+             :class="$i18n.locale === 'ar' ? 'font-arabic' : 'font-english'">
+            {{ $i18n.locale === 'ar' ? 'لوحة التحكم' : 'Dashboard' }}
           </p>
         </div>
       </div>
@@ -24,20 +29,21 @@
       <!-- Close button for mobile -->
       <button
         @click="toggleSidebar"
-        class="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200"
+        class="lg:hidden p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200"
       >
-        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-5 w-5 sm:h-6 sm:w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
         </svg>
       </button>
     </div>
 
     <!-- Navigation -->
-    <nav class="mt-8 px-4 flex-1 overflow-y-auto sidebar-scroll">
+    <nav class="mt-4 sm:mt-8 px-2 sm:px-4 flex-1 overflow-y-auto sidebar-scroll">
       <!-- Navigation Section Label -->
-      <div class="px-4 mb-4">
-        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider font-english">
-          Navigation
+      <div class="px-2 sm:px-4 mb-3 sm:mb-4">
+        <h3 class="text-xs font-semibold text-gray-400 uppercase tracking-wider" 
+            :class="$i18n.locale === 'ar' ? 'font-arabic' : 'font-english'">
+          {{ $i18n.locale === 'ar' ? 'التنقل' : 'Navigation' }}
         </h3>
       </div>
       
@@ -46,7 +52,7 @@
           v-for="item in navigationItems"
           :key="item.name"
           :to="item.to"
-          class="group relative flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] sidebar-menu-item"
+          class="group relative flex items-center px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] sidebar-menu-item rtl:flex-row-reverse"
           :class="[
             $route.name === item.name
               ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white shadow-lg shadow-primary-500/25'
@@ -57,7 +63,7 @@
           <!-- Active indicator -->
           <div
             v-if="$route.name === item.name"
-            class="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"
+            class="absolute left-0 top-1/2 transform -translate-y-1/2 w-1 h-8 bg-white rounded-r-full rtl:left-auto rtl:right-0 rtl:rounded-r-none rtl:rounded-l-full"
           ></div>
           
           <!-- Icon with enhanced styling -->
@@ -118,15 +124,16 @@
           </div>
           
           <!-- Text with better typography -->
-          <div class="ml-4 flex-1">
-            <span class="font-semibold font-english tracking-wide">
+          <div class="ml-3 sm:ml-4 rtl:ml-0 rtl:mr-3 rtl:sm:mr-4 flex-1">
+            <span class="font-semibold tracking-wide text-sm sm:text-base" 
+                  :class="$i18n.locale === 'ar' ? 'font-arabic' : 'font-english'">
               {{ $t(`nav.${item.key}`) }}
             </span>
           </div>
           
           <!-- Hover arrow indicator -->
           <div
-            class="opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            class="opacity-0 group-hover:opacity-100 transition-opacity duration-300 rtl:rotate-180"
             :class="{ 'opacity-100': $route.name === item.name }"
           >
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -138,16 +145,19 @@
     </nav>
 
     <!-- Sidebar Footer -->
-    <div class="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-      <div class="flex items-center">
-        <div class="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
-          <span class="text-sm font-bold text-white">A</span>
+    <div class="absolute bottom-0 left-0 right-0 p-3 sm:p-4 border-t border-gray-100 bg-gradient-to-r from-gray-50 to-white rtl:flex-row-reverse">
+      <div class="flex items-center rtl:flex-row-reverse">
+        <div class="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
+          <span class="text-xs sm:text-sm font-bold text-white">A</span>
         </div>
-        <div class="ml-3 flex-1">
-          <p class="text-sm font-semibold text-gray-900 font-english">Admin User</p>
+        <div class="ml-2 sm:ml-3 rtl:ml-0 rtl:mr-2 rtl:sm:mr-3 flex-1">
+          <p class="text-xs sm:text-sm font-semibold text-gray-900" 
+             :class="$i18n.locale === 'ar' ? 'font-arabic' : 'font-english'">
+            {{ $i18n.locale === 'ar' ? 'مدير النظام' : 'Admin User' }}
+          </p>
           <p class="text-xs text-gray-500 font-english">admin@shipping.com</p>
         </div>
-        <button class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200">
+        <button class="p-1.5 sm:p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors duration-200">
           <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
           </svg>
