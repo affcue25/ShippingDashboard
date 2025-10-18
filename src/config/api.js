@@ -1,15 +1,15 @@
 // API Configuration
 export const API_CONFIG = {
-  // Production API (Render.com)
+  // Production API (Your server)
   production: {
-    baseURL: 'https://shippingapiflask.onrender.com/api',
+    baseURL: 'http://136.243.133.165/api',
     timeout: 30000, // Longer timeout for production (30s)
     retries: 3
   },
   
-  // Development API (local)
+  // Development API (Your server)
   development: {
-    baseURL: 'https://shippingapiflask.onrender.com/api',
+    baseURL: 'http://136.243.133.165/api',
     timeout: 10000,
     retries: 1
   },

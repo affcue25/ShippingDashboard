@@ -52,6 +52,7 @@ const formatDate = (dateString) => {
   try {
     return format(new Date(dateString), 'MMM dd, yyyy')
   } catch {
+    if(dateString != '' && dateString != 'NULL' && dateString != null && dateString != undefined && dateString != 'N/A' && dateString != 'NaN') return dateString
     return 'N/A'
   }
 }

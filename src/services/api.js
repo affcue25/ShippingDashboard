@@ -78,13 +78,16 @@ export const shippingAPI = {
 
   // Filter shipments
   filterShipments: (params = {}) => {
+    console.log('🔍 API filterShipments called with params:', params)
     const queryParams = new URLSearchParams()
     Object.keys(params).forEach(key => {
       if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
         queryParams.append(key, params[key])
       }
     })
-    return api.get(`/shipments/filter?${queryParams}`)
+    const url = `/shipments/filter?${queryParams}`
+    console.log('🔍 API URL:', url)
+    return api.get(url)
   },
 
   // Get top customers
