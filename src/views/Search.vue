@@ -10,83 +10,340 @@
         </p>
       </div>
 
-      <!-- Search Form -->
-      <div class="card mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.fromCity') }}
-            </label>
-            <input
-              v-model="searchForm.fromCity"
-              type="text"
-              class="input-field"
-              placeholder="Enter source city"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.toCity') }}
-            </label>
-            <input
-              v-model="searchForm.toCity"
-              type="text"
-              class="input-field"
-              placeholder="Enter destination city"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.shipperName') }}
-            </label>
-            <input
-              v-model="searchForm.shipperName"
-              type="text"
-              class="input-field"
-              placeholder="Enter shipper name"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.consigneeName') }}
-            </label>
-            <input
-              v-model="searchForm.consigneeName"
-              type="text"
-              class="input-field"
-              placeholder="Enter consignee name"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.minWeight') }}
-            </label>
-            <input
-              v-model="searchForm.minWeight"
-              type="number"
-              class="input-field"
-              placeholder="Minimum weight"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('search.dateFilter') }}
-            </label>
-            <select v-model="searchForm.dateFilter" class="input-field">
-              <option value="">{{ $t('common.total') }}</option>
-              <option value="today">{{ $t('common.today') }}</option>
-              <option value="week">{{ $t('common.week') }}</option>
-              <option value="month">{{ $t('common.month') }}</option>
-              <option value="year">{{ $t('common.year') }}</option>
-            </select>
-          </div>
+      <!-- My Saved Searches -->
+      <div v-if="savedSearches.length > 0" class="card mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900 font-english flex items-center">
+            ⭐ My Saved Searches
+          </h3>
+          <button @click="showSavedSearches = !showSavedSearches" class="btn-secondary text-sm">
+            {{ showSavedSearches ? 'Hide' : 'Show' }}
+          </button>
         </div>
         
+        <div v-if="showSavedSearches" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div v-for="search in savedSearches" :key="search.id" class="border border-gray-200 rounded-lg p-4 bg-white">
+            <h4 class="font-medium text-gray-900 mb-2">{{ search.title }}</h4>
+            <p v-if="search.description" class="text-sm text-gray-600 mb-2">{{ search.description }}</p>
+            <p class="text-xs text-gray-500 mb-3">
+              Last used: {{ formatDate(search.last_used_at) }} • Used {{ search.usage_count }} times
+            </p>
+            <div class="flex space-x-2">
+              <button @click="applySavedSearch(search)" class="btn-primary text-xs px-3 py-1">
+                Apply
+              </button>
+              <button @click="editSavedSearch(search)" class="btn-secondary text-xs px-3 py-1">
+                Edit
+              </button>
+              <button @click="deleteSavedSearch(search.id)" class="btn-danger text-xs px-3 py-1">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Form -->
+      <div class="card mb-6">
+        <div v-if="showFilters">
+        <!-- Section 1: Shipment Information -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              📦 Shipment Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  ID Number
+                </label>
+                <input
+                  v-model="searchForm.id"
+                  type="number"
+                  class="input-field"
+                  placeholder="Enter ID number"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipment Number
+                </label>
+                <input
+                  v-model="searchForm.shipmentNumber"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter shipment number"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Reference Number
+                </label>
+                <input
+                  v-model="searchForm.referenceNumber"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter reference number"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Country Code
+                </label>
+                <select v-model="searchForm.countryCode" class="input-field">
+                  <option value="">All Countries</option>
+                  <option value="SA">Saudi Arabia (SA)</option>
+                  <option value="AE">UAE (AE)</option>
+                  <option value="KW">Kuwait (KW)</option>
+                  <option value="QA">Qatar (QA)</option>
+                  <option value="BH">Bahrain (BH)</option>
+                  <option value="OM">Oman (OM)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Number of Boxes
+                </label>
+                <input
+                  v-model="searchForm.numberOfBoxes"
+                  type="number"
+                  class="input-field"
+                  placeholder="Enter number of boxes"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipment Description
+                </label>
+                <input
+                  v-model="searchForm.description"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter description"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  PDF Filename
+                </label>
+                <input
+                  v-model="searchForm.pdfFilename"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter PDF filename"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Dates -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              📅 Dates
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Creation Date From
+                </label>
+                <input
+                  v-model="searchForm.creationDateFrom"
+                  type="date"
+                  class="input-field"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Creation Date To
+                </label>
+                <input
+                  v-model="searchForm.creationDateTo"
+                  type="date"
+                  class="input-field"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Processing Date From
+                </label>
+                <input
+                  v-model="searchForm.processingDateFrom"
+                  type="date"
+                  class="input-field"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Processing Date To
+                </label>
+                <input
+                  v-model="searchForm.processingDateTo"
+                  type="date"
+                  class="input-field"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 3: Weight and Payment -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              ⚖️ Weight and Payment
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Minimum Weight (kg)
+                </label>
+                <input
+                  v-model="searchForm.minWeight"
+                  type="number"
+                  step="0.1"
+                  class="input-field"
+                  placeholder="Enter minimum weight"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Maximum Weight (kg)
+                </label>
+                <input
+                  v-model="searchForm.maxWeight"
+                  type="number"
+                  step="0.1"
+                  class="input-field"
+                  placeholder="Enter maximum weight"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Cash on Delivery (COD)
+                </label>
+                <select v-model="searchForm.cod" class="input-field">
+                  <option value="">All</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 4: Shipper Data -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              👤 Shipper Data
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipper Name
+                </label>
+                <input
+                  v-model="searchForm.shipperName"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter shipper name"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipper City
+                </label>
+                <input
+                  v-model="searchForm.shipperCity"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter shipper city"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipper Phone
+                </label>
+                <input
+                  v-model="searchForm.shipperPhone"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter phone number (partial search)"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Shipper Address
+                </label>
+                <input
+                  v-model="searchForm.shipperAddress"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter shipper address"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 5: Consignee Data -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              👥 Consignee Data
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Consignee Name
+                </label>
+                <input
+                  v-model="searchForm.consigneeName"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter consignee name"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Consignee City
+                </label>
+                <input
+                  v-model="searchForm.consigneeCity"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter consignee city"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Consignee Phone
+                </label>
+                <input
+                  v-model="searchForm.consigneePhone"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter phone number (partial search)"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
+                  Consignee Address
+                </label>
+                <input
+                  v-model="searchForm.consigneeAddress"
+                  type="text"
+                  class="input-field"
+                  placeholder="Enter consignee address"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
         <div class="flex justify-end space-x-4 mt-6">
-          <button @click="() => clearForm()" class="btn-secondary">
+          <button @click="showFilters = !showFilters" class="btn-secondary text-sm">
+                {{ showFilters ? 'Hide' : 'Show' }} Filters
+          </button>
+          <button v-if="showFilters" @click="() => clearForm()" class="btn-secondary">
             {{ $t('search.clear') }}
           </button>
-          <button @click="() => performSearch()" class="btn-primary">
+          <button v-if="showFilters" @click="() => saveSearch()" class="btn-warning">
+            ⭐ Save Search
+          </button>
+          <button v-if="showFilters" @click="() => performSearch()" class="btn-primary">
             {{ $t('search.search') }}
           </button>
         </div>
@@ -241,11 +498,75 @@
         </div>
       </div>
     </div>
+
+    <!-- Save Search Modal -->
+    <div v-if="showSaveModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-4">Save Search</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search Title *</label>
+            <input
+              v-model="saveSearchForm.title"
+              type="text"
+              class="input-field"
+              placeholder="Enter search title"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+            <textarea
+              v-model="saveSearchForm.description"
+              class="input-field"
+              rows="3"
+              placeholder="Enter description"
+            ></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button @click="showSaveModal = false" class="btn-secondary">Cancel</button>
+          <button @click="confirmSaveSearch" class="btn-primary">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Search Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-lg p-6 w-full max-w-md">
+        <h3 class="text-lg font-semibold mb-4">Edit Search</h3>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Search Title *</label>
+            <input
+              v-model="saveSearchForm.title"
+              type="text"
+              class="input-field"
+              placeholder="Enter search title"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Description (Optional)</label>
+            <textarea
+              v-model="saveSearchForm.description"
+              class="input-field"
+              rows="3"
+              placeholder="Enter description"
+            ></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button @click="showEditModal = false" class="btn-secondary">Cancel</button>
+          <button @click="confirmEditSearch" class="btn-primary">Update</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { shippingAPI } from '../services/api'
 import { format } from 'date-fns'
 
@@ -255,14 +576,50 @@ const results = ref([])
 const pagination = ref(null)
 const error = ref('')
 const pageInput = ref(1)
+const savedSearches = ref([])
+const showSavedSearches = ref(true)
+const showFilters = ref(true)
+const showSaveModal = ref(false)
+const showEditModal = ref(false)
+const editingSearch = ref(null)
 
 const searchForm = ref({
-  fromCity: '',
-  toCity: '',
-  shipperName: '',
-  consigneeName: '',
+  // Shipment Information
+  id: '',
+  shipmentNumber: '',
+  referenceNumber: '',
+  countryCode: '',
+  numberOfBoxes: '',
+  description: '',
+  pdfFilename: '',
+  
+  // Dates
+  creationDateFrom: '',
+  creationDateTo: '',
+  processingDateFrom: '',
+  processingDateTo: '',
+  
+  // Weight and Payment
   minWeight: '',
-  dateFilter: ''
+  maxWeight: '',
+  cod: '',
+  
+  // Shipper Data
+  shipperName: '',
+  shipperCity: '',
+  shipperPhone: '',
+  shipperAddress: '',
+  
+  // Consignee Data
+  consigneeName: '',
+  consigneeCity: '',
+  consigneePhone: '',
+  consigneeAddress: ''
+})
+
+const saveSearchForm = ref({
+  title: '',
+  description: ''
 })
 
 const formatDate = (dateString) => {
@@ -291,7 +648,48 @@ const formatDate = (dateString) => {
   }
 }
 
+const validateSearchForm = () => {
+  // Check if at least one field is filled
+  const hasAnyValue = Object.values(searchForm.value).some(value => 
+    value !== null && value !== undefined && value !== ''
+  )
+  
+  if (!hasAnyValue) {
+    error.value = 'Please fill at least one search field before searching.'
+    return false
+  }
+  
+  // Validate date ranges
+  if (searchForm.value.creationDateFrom && searchForm.value.creationDateTo) {
+    if (new Date(searchForm.value.creationDateFrom) > new Date(searchForm.value.creationDateTo)) {
+      error.value = 'Creation Date From must be earlier than or equal to Creation Date To.'
+      return false
+    }
+  }
+  
+  if (searchForm.value.processingDateFrom && searchForm.value.processingDateTo) {
+    if (new Date(searchForm.value.processingDateFrom) > new Date(searchForm.value.processingDateTo)) {
+      error.value = 'Processing Date From must be earlier than or equal to Processing Date To.'
+      return false
+    }
+  }
+  
+  // Validate weight range
+  if (searchForm.value.minWeight && searchForm.value.maxWeight) {
+    if (parseFloat(searchForm.value.minWeight) > parseFloat(searchForm.value.maxWeight)) {
+      error.value = 'Minimum weight must be less than or equal to maximum weight.'
+      return false
+    }
+  }
+  
+  return true
+}
+
 const performSearch = async (page = 1) => {
+  if (!validateSearchForm()) {
+    return
+  }
+  
   try {
     loading.value = true
     error.value = ''
@@ -302,12 +700,37 @@ const performSearch = async (page = 1) => {
       limit: 20
     }
     
-    if (searchForm.value.fromCity) params.from_city = searchForm.value.fromCity
-    if (searchForm.value.toCity) params.to_city = searchForm.value.toCity
-    if (searchForm.value.shipperName) params.shipper_name = searchForm.value.shipperName
-    if (searchForm.value.consigneeName) params.consignee_name = searchForm.value.consigneeName
+    // Shipment Information
+    if (searchForm.value.id) params.id = searchForm.value.id
+    if (searchForm.value.shipmentNumber) params.shipment_number = searchForm.value.shipmentNumber
+    if (searchForm.value.referenceNumber) params.reference_number = searchForm.value.referenceNumber
+    if (searchForm.value.countryCode) params.country_code = searchForm.value.countryCode
+    if (searchForm.value.numberOfBoxes) params.number_of_boxes = searchForm.value.numberOfBoxes
+    if (searchForm.value.description) params.description = searchForm.value.description
+    if (searchForm.value.pdfFilename) params.pdf_filename = searchForm.value.pdfFilename
+    
+    // Dates
+    if (searchForm.value.creationDateFrom) params.creation_date_from = searchForm.value.creationDateFrom
+    if (searchForm.value.creationDateTo) params.creation_date_to = searchForm.value.creationDateTo
+    if (searchForm.value.processingDateFrom) params.processing_date_from = searchForm.value.processingDateFrom
+    if (searchForm.value.processingDateTo) params.processing_date_to = searchForm.value.processingDateTo
+    
+    // Weight and Payment
     if (searchForm.value.minWeight) params.min_weight = searchForm.value.minWeight
-    if (searchForm.value.dateFilter) params.date_filter = searchForm.value.dateFilter
+    if (searchForm.value.maxWeight) params.max_weight = searchForm.value.maxWeight
+    if (searchForm.value.cod) params.cod = searchForm.value.cod
+    
+    // Shipper Data
+    if (searchForm.value.shipperName) params.shipper_name = searchForm.value.shipperName
+    if (searchForm.value.shipperCity) params.shipper_city = searchForm.value.shipperCity
+    if (searchForm.value.shipperPhone) params.shipper_phone = searchForm.value.shipperPhone
+    if (searchForm.value.shipperAddress) params.shipper_address = searchForm.value.shipperAddress
+    
+    // Consignee Data
+    if (searchForm.value.consigneeName) params.consignee_name = searchForm.value.consigneeName
+    if (searchForm.value.consigneeCity) params.consignee_city = searchForm.value.consigneeCity
+    if (searchForm.value.consigneePhone) params.consignee_phone = searchForm.value.consigneePhone
+    if (searchForm.value.consigneeAddress) params.consignee_address = searchForm.value.consigneeAddress
     
     console.log('🔍 Advanced search with params:', params)
     const response = await shippingAPI.advancedSearch(params)
@@ -315,7 +738,7 @@ const performSearch = async (page = 1) => {
     
     results.value = response.data || []
     pagination.value = response.pagination || null
-    
+    showFilters.value = false
     // Update page input to match current page
     if (pagination.value) {
       pageInput.value = pagination.value.page
@@ -356,17 +779,144 @@ watch(pagination, (newPagination) => {
 
 const clearForm = () => {
   searchForm.value = {
-    fromCity: '',
-    toCity: '',
-    shipperName: '',
-    consigneeName: '',
+    // Shipment Information
+    id: '',
+    shipmentNumber: '',
+    referenceNumber: '',
+    countryCode: '',
+    numberOfBoxes: '',
+    description: '',
+    pdfFilename: '',
+    
+    // Dates
+    creationDateFrom: '',
+    creationDateTo: '',
+    processingDateFrom: '',
+    processingDateTo: '',
+    
+    // Weight and Payment
     minWeight: '',
-    dateFilter: ''
+    maxWeight: '',
+    cod: '',
+    
+    // Shipper Data
+    shipperName: '',
+    shipperCity: '',
+    shipperPhone: '',
+    shipperAddress: '',
+    
+    // Consignee Data
+    consigneeName: '',
+    consigneeCity: '',
+    consigneePhone: '',
+    consigneeAddress: ''
   }
   results.value = []
   pagination.value = null
   searchPerformed.value = false
   error.value = ''
+}
+
+// Saved Searches Functions
+const loadSavedSearches = async () => {
+  try {
+    const response = await shippingAPI.getSavedSearches()
+    savedSearches.value = response.data || []
+  } catch (err) {
+    console.error('Error loading saved searches:', err)
+  }
+}
+
+const saveSearch = () => {
+  if (!validateSearchForm()) {
+    return
+  }
+  showSaveModal.value = true
+}
+
+const confirmSaveSearch = async () => {
+  try {
+    const searchData = {
+      title: saveSearchForm.value.title,
+      description: saveSearchForm.value.description,
+      filters: { ...searchForm.value }
+    }
+    
+    const response = await shippingAPI.saveSearch(searchData)
+    if (response.success) {
+      showSaveModal.value = false
+      saveSearchForm.value = { title: '', description: '' }
+      await loadSavedSearches()
+      // Show success message
+    }
+  } catch (err) {
+    console.error('Error saving search:', err)
+    error.value = err.message || 'Error saving search'
+  }
+}
+
+const applySavedSearch = async (search) => {
+  try {
+    // Fill form with saved filters
+    searchForm.value = { ...search.filters }
+    
+    // Update usage count
+    await shippingAPI.updateSearchUsage(search.id)
+    
+    // Perform search automatically
+    await performSearch()
+    
+    // Reload saved searches to update usage count
+    await loadSavedSearches()
+  } catch (err) {
+    console.error('Error applying saved search:', err)
+    error.value = err.message || 'Error applying saved search'
+  }
+}
+
+const editSavedSearch = (search) => {
+  editingSearch.value = search
+  searchForm.value = { ...search.filters }
+  saveSearchForm.value = {
+    title: search.title,
+    description: search.description || ''
+  }
+  showEditModal.value = true
+}
+
+const confirmEditSearch = async () => {
+  try {
+    const searchData = {
+      title: saveSearchForm.value.title,
+      description: saveSearchForm.value.description,
+      filters: { ...searchForm.value }
+    }
+    
+    const response = await shippingAPI.updateSavedSearch(editingSearch.value.id, searchData)
+    if (response.success) {
+      showEditModal.value = false
+      editingSearch.value = null
+      saveSearchForm.value = { title: '', description: '' }
+      await loadSavedSearches()
+    }
+  } catch (err) {
+    console.error('Error updating saved search:', err)
+    error.value = err.message || 'Error updating saved search'
+  }
+}
+
+const deleteSavedSearch = async (searchId) => {
+  if (confirm('Are you sure you want to delete this saved search?')) {
+    try {
+      const response = await shippingAPI.deleteSavedSearch(searchId)
+      if (response.success) {
+        await loadSavedSearches()
+      }
+    } catch (err) {
+      console.error('Error deleting saved search:', err)
+      error.value = err.message || 'Error deleting saved search'
+    }
+  }
 }
 
 const exportResults = async () => {
@@ -389,4 +939,9 @@ const exportResults = async () => {
     console.error('Error exporting results:', error)
   }
 }
+
+// Load saved searches on component mount
+onMounted(() => {
+  loadSavedSearches()
+})
 </script>

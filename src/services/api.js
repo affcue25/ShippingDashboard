@@ -208,7 +208,18 @@ export const shippingAPI = {
     return api.get(`/download/${filename}`, {
       responseType: 'blob'
     })
-  }
+  },
+
+  // Saved Searches
+  getSavedSearches: () => api.get('/saved-searches'),
+  
+  saveSearch: (searchData) => api.post('/saved-searches', searchData),
+  
+  updateSavedSearch: (id, searchData) => api.put(`/saved-searches/${id}`, searchData),
+  
+  deleteSavedSearch: (id) => api.delete(`/saved-searches/${id}`),
+  
+  updateSearchUsage: (id) => api.put(`/saved-searches/${id}/usage`)
 }
 
 export default api
