@@ -355,9 +355,32 @@
           <h3 class="text-lg font-semibold text-gray-900 font-english">
             {{ $t('search.results') }} ({{ results.length }})
           </h3>
-          <button v-if="results.length > 0" @click="exportResults" class="btn-success">
-            {{ $t('common.export') }}
-          </button>
+          <div class="flex items-center space-x-2">
+            <div class="relative">
+              <button @click="showColumnsMenu = !showColumnsMenu" class="btn-secondary">
+                Columns
+              </button>
+              <div v-if="showColumnsMenu" class="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded shadow-lg p-3 z-10">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-sm font-medium">Select Columns</span>
+                  <button @click="showColumnsMenu = false" class="text-gray-400 hover:text-gray-600">✕</button>
+                </div>
+                <div class="grid grid-cols-2 gap-2 max-h-64 overflow-auto">
+                  <label v-for="col in allColumns" :key="col.key" class="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" v-model="selectedColumnKeys" :value="col.key" />
+                    <span>{{ col.label }}</span>
+                  </label>
+                </div>
+                <div class="flex justify-between mt-3">
+                  <button @click="selectAllColumns" class="btn-secondary text-xs px-2 py-1">Select All</button>
+                  <button @click="clearAllColumns" class="btn-secondary text-xs px-2 py-1">Clear</button>
+                </div>
+              </div>
+            </div>
+            <button v-if="results.length > 0" :disabled="visibleColumns.length === 0" @click="exportResults" class="btn-success disabled:opacity-50 disabled:cursor-not-allowed">
+              {{ $t('common.export') }}
+            </button>
+          </div>
         </div>
 
         <div v-if="loading" class="flex items-center justify-center h-64">
@@ -374,7 +397,7 @@
         </div>
         <div v-else>
           <div class="mb-4 text-sm text-gray-600 font-english">
-            <p>📊 Showing all shipment columns. Scroll horizontally to view all data.</p>
+            <p>📊 Showing {{ visibleColumns.length }} selected columns. Scroll horizontally to view all data.</p>
             <p v-if="pagination" class="text-primary-600 font-medium">
               🔍 Search Results: {{ pagination.total }} results found
             </p>
@@ -383,48 +406,14 @@
             <table class="min-w-full divide-y divide-gray-200" style="min-width: 2000px;">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="table-header">ID</th>
-                  <th class="table-header">Shipment Number</th>
-                  <th class="table-header">Country Code</th>
-                  <th class="table-header">Shipper Name</th>
-                  <th class="table-header">Shipper City</th>
-                  <th class="table-header">Shipper Phone</th>
-                  <th class="table-header">Shipper Address</th>
-                  <th class="table-header">Consignee Name</th>
-                  <th class="table-header">Consignee City</th>
-                  <th class="table-header">Consignee Phone</th>
-                  <th class="table-header">Consignee Address</th>
-                  <th class="table-header">Reference Number</th>
-                  <th class="table-header">Creation Date</th>
-                  <th class="table-header">COD</th>
-                  <th class="table-header">Weight</th>
-                  <th class="table-header">Boxes</th>
-                  <th class="table-header">Description</th>
-                  <th class="table-header">PDF Filename</th>
-                  <th class="table-header">Processing Date</th>
+                  <th v-for="col in visibleColumns" :key="col.key" class="table-header">{{ col.label }}</th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr v-for="shipment in results" :key="shipment.id" class="hover:bg-gray-50">
-                  <td class="table-cell font-medium text-primary-600">{{ shipment.id || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.number_shipment || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.country_code || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipper_name || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipper_city || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipper_phone || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipper_address || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.consignee_name || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.consignee_city || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.consignee_phone || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.consignee_address || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipment_reference_number || 'N/A' }}</td>
-                  <td class="table-cell">{{ formatDate(shipment.shipment_creation_date) }}</td>
-                  <td class="table-cell">{{ shipment.cod || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipment_weight || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.number_of_shipment_boxes || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.shipment_description || 'N/A' }}</td>
-                  <td class="table-cell">{{ shipment.pdf_filename || 'N/A' }}</td>
-                  <td class="table-cell">{{ formatDate(shipment.processing_date) }}</td>
+                  <td v-for="col in visibleColumns" :key="col.key" :class="['table-cell', col.key === 'id' ? 'font-medium text-primary-600' : '']">
+                    {{ col.formatter ? col.formatter(shipment[col.key]) : (shipment[col.key] || 'N/A') }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -566,7 +555,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { shippingAPI } from '../services/api'
 import { format } from 'date-fns'
 
@@ -582,6 +571,39 @@ const showFilters = ref(true)
 const showSaveModal = ref(false)
 const showEditModal = ref(false)
 const editingSearch = ref(null)
+
+// Column selection state
+const showColumnsMenu = ref(false)
+const allColumns = ref([
+  { key: 'id', label: 'ID' },
+  { key: 'number_shipment', label: 'Shipment Number' },
+  { key: 'country_code', label: 'Country Code' },
+  { key: 'shipper_name', label: 'Shipper Name' },
+  { key: 'shipper_city', label: 'Shipper City' },
+  { key: 'shipper_phone', label: 'Shipper Phone' },
+  { key: 'shipper_address', label: 'Shipper Address' },
+  { key: 'consignee_name', label: 'Consignee Name' },
+  { key: 'consignee_city', label: 'Consignee City' },
+  { key: 'consignee_phone', label: 'Consignee Phone' },
+  { key: 'consignee_address', label: 'Consignee Address' },
+  { key: 'shipment_reference_number', label: 'Reference Number' },
+  { key: 'shipment_creation_date', label: 'Creation Date', formatter: (v) => formatDate(v) },
+  { key: 'cod', label: 'COD' },
+  { key: 'shipment_weight', label: 'Weight' },
+  { key: 'number_of_shipment_boxes', label: 'Boxes' },
+  { key: 'shipment_description', label: 'Description' },
+  { key: 'pdf_filename', label: 'PDF Filename' },
+  { key: 'processing_date', label: 'Processing Date', formatter: (v) => formatDate(v) }
+])
+const selectedColumnKeys = ref(allColumns.value.map(c => c.key))
+const visibleColumns = computed(() => allColumns.value.filter(c => selectedColumnKeys.value.includes(c.key)))
+
+const selectAllColumns = () => {
+  selectedColumnKeys.value = allColumns.value.map(c => c.key)
+}
+const clearAllColumns = () => {
+  selectedColumnKeys.value = []
+}
 
 const searchForm = ref({
   // Shipment Information
@@ -923,10 +945,16 @@ const exportResults = async () => {
   if (results.value.length === 0) return
   
   try {
-    const response = await shippingAPI.exportData({
-      format: 'csv',
-      data: results.value
+    // Build export rows with only selected columns, preserving order
+    const columns = visibleColumns.value
+    const dataToExport = results.value.map(row => {
+      const obj = {}
+      columns.forEach(col => {
+        obj[col.key] = row[col.key] ?? ''
+      })
+      return obj
     })
+    const response = await shippingAPI.exportData({ format: 'csv', data: dataToExport })
     
     if (response.success) {
       // Create download link

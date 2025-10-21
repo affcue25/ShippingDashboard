@@ -76,7 +76,7 @@ export const shippingAPI = {
     return api.get(`/shipments?${queryParams}`)
   },
 
-  // Filter shipments
+  // Filter shipments (legacy - single column search)
   filterShipments: (params = {}) => {
     console.log('🔍 API filterShipments called with params:', params)
     const queryParams = new URLSearchParams()
@@ -86,6 +86,20 @@ export const shippingAPI = {
       }
     })
     const url = `/shipments/filter?${queryParams}`
+    console.log('🔍 API URL:', url)
+    return api.get(url)
+  },
+
+  // Search shipments (multi-column search)
+  searchShipments: (params = {}) => {
+    console.log('🔍 API searchShipments called with params:', params)
+    const queryParams = new URLSearchParams()
+    Object.keys(params).forEach(key => {
+      if (params[key] !== null && params[key] !== undefined && params[key] !== '') {
+        queryParams.append(key, params[key])
+      }
+    })
+    const url = `/shipments/search?${queryParams}`
     console.log('🔍 API URL:', url)
     return api.get(url)
   },
