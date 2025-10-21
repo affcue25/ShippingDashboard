@@ -14,8 +14,43 @@
       </div>
     </div>
 
-    <!-- Stats Cards -->
+    <!-- Date Filters + Stats Cards -->
     <div class="px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Date Filter Controls -->
+      <div class="card mb-6">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between space-y-4 md:space-y-0">
+          <div class="flex items-center space-x-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2 font-english">Period</label>
+              <select v-model="datePreset" class="input-field w-48">
+                <option value="today">Today</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+                <option value="year">Year</option>
+                <option value="total">Total</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            <div v-if="datePreset === 'custom'" class="flex items-end space-x-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">From</label>
+                <input v-model="dateFrom" type="date" class="input-field" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">To</label>
+                <input v-model="dateTo" type="date" class="input-field" />
+              </div>
+              <button @click="applyDateFilter" class="btn-primary" :disabled="!canApplyCustom">
+                Apply
+              </button>
+            </div>
+          </div>
+          <div class="text-sm text-gray-600 font-english" v-if="activeFilterLabel">
+            Showing data for: <span class="font-medium text-gray-900">{{ activeFilterLabel }}</span>
+          </div>
+        </div>
+      </div>
+
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           :title="$t('dashboard.todayShipments')"
@@ -129,7 +164,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { shippingAPI } from '../services/api'
 import StatCard from '../components/StatCard.vue'
 import TopCitiesChart from '../components/TopCitiesChart.vue'
@@ -150,9 +185,33 @@ const topCitiesData = ref([])
 const recentShipments = ref([])
 const topCustomers = ref([])
 
+// Date filter state
+const datePreset = ref('today') // today | week | month | year | total | custom
+const dateFrom = ref('')
+const dateTo = ref('')
+const canApplyCustom = computed(() => dateFrom.value && dateTo.value)
+const activeFilterLabel = computed(() => {
+  if (datePreset.value === 'custom' && canApplyCustom.value) {
+    return `${dateFrom.value} → ${dateTo.value}`
+  }
+  const labels = { today: 'Today', week: 'This Week', month: 'This Month', year: 'This Year', total: 'All Time' }
+  return labels[datePreset.value] || ''
+})
+
+const buildDateParams = () => {
+  if (datePreset.value === 'custom' && canApplyCustom.value) {
+    return { start_date: dateFrom.value, end_date: dateTo.value }
+  }
+  if (datePreset.value && datePreset.value !== 'total') {
+    return { date_filter: datePreset.value }
+  }
+  return {}
+}
+
 const loadDashboardData = async () => {
   try {
     loading.value = true
+    const dateParams = buildDateParams()
     
     // Load all dashboard data in parallel
     const [
@@ -162,17 +221,17 @@ const loadDashboardData = async () => {
       recentShipmentsRes,
       topCustomersRes
     ] = await Promise.all([
-      shippingAPI.getTotalShipments({ date_filter: 'today' }),
-      shippingAPI.getAverageWeight({ date_filter: 'today' }),
-      shippingAPI.getTopCities({ limit: 5 }),
-      shippingAPI.getRecentShipments({ limit: 5 }),
-      shippingAPI.getTopCustomers({ limit: 5 })
+      shippingAPI.getTotalShipments({ ...dateParams }),
+      shippingAPI.getAverageWeight({ ...dateParams }),
+      shippingAPI.getTopCities({ limit: 5, ...dateParams }),
+      shippingAPI.getRecentShipments({ limit: 5, ...dateParams }),
+      shippingAPI.getTopCustomers({ limit: 5, ...dateParams })
     ])
 
     // Update stats
     stats.value = {
       todayShipments: totalShipmentsRes.data?.total || 0,
-      totalShipments: (await shippingAPI.getTotalShipments()).data?.total || 0,
+      totalShipments: totalShipmentsRes.data?.total || 0,
       averageWeight: Math.round(averageWeightRes.data?.average_weight || 0),
       topCitiesCount: topCitiesRes.data?.length || 0
     }
@@ -188,6 +247,18 @@ const loadDashboardData = async () => {
     loading.value = false
   }
 }
+
+const applyDateFilter = () => {
+  if (datePreset.value === 'custom' && !canApplyCustom.value) return
+  loadDashboardData()
+}
+
+// Auto-reload when switching presets (non-custom)
+watch(datePreset, (val) => {
+  if (val !== 'custom') {
+    loadDashboardData()
+  }
+})
 
 onMounted(() => {
   loadDashboardData()
