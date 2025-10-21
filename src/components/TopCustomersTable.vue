@@ -11,7 +11,8 @@
         <thead class="bg-gray-50">
           <tr>
             <th class="table-header">#</th>
-            <th class="table-header">{{ $t('shipments.columns.shipperName') }}</th>
+            <th class="table-header w-48 whitespace-normal break-words">{{ $t('shipments.columns.shipperName') }}</th>
+            <th class="table-header">Shipper Phone</th>
             <th class="table-header">Shipments</th>
             <th class="table-header">Unique Consignees</th>
           </tr>
@@ -21,8 +22,11 @@
             <td class="table-cell font-medium text-gray-500">
               {{ index + 1 }}
             </td>
-            <td class="table-cell font-medium text-gray-900">
+            <td class="table-cell font-medium text-gray-900 w-48 whitespace-normal break-words align-top">
               {{ customer.shipper_name || 'N/A' }}
+            </td>
+            <td class="table-cell">
+              {{ customer.shipper_phone || 'N/A' }}
             </td>
             <td class="table-cell">
               <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-100 text-primary-800">
