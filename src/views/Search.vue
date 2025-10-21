@@ -216,13 +216,15 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Cash on Delivery (COD)
+                  Cash on Delivery (COD) Amount
                 </label>
-                <select v-model="searchForm.cod" class="input-field">
-                  <option value="">All</option>
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
+                <input
+                  v-model.number="searchForm.cod"
+                  type="number"
+                  step="0.01"
+                  class="input-field"
+                  placeholder="Enter COD amount"
+                />
               </div>
             </div>
           </div>
@@ -738,9 +740,15 @@ const performSearch = async (page = 1) => {
     if (searchForm.value.processingDateTo) params.processing_date_to = searchForm.value.processingDateTo
     
     // Weight and Payment
-    if (searchForm.value.minWeight) params.min_weight = searchForm.value.minWeight
-    if (searchForm.value.maxWeight) params.max_weight = searchForm.value.maxWeight
-    if (searchForm.value.cod) params.cod = searchForm.value.cod
+    if (searchForm.value.minWeight !== '' && searchForm.value.minWeight !== null && searchForm.value.minWeight !== undefined) {
+      params.min_weight = searchForm.value.minWeight
+    }
+    if (searchForm.value.maxWeight !== '' && searchForm.value.maxWeight !== null && searchForm.value.maxWeight !== undefined) {
+      params.max_weight = searchForm.value.maxWeight
+    }
+    if (searchForm.value.cod !== '' && searchForm.value.cod !== null && searchForm.value.cod !== undefined) {
+      params.cod = searchForm.value.cod
+    }
     
     // Shipper Data
     if (searchForm.value.shipperName) params.shipper_name = searchForm.value.shipperName
