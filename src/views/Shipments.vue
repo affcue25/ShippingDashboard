@@ -12,38 +12,41 @@
 
       <!-- Search and Filters -->
       <div class="card mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="md:col-span-2">
             <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('shipments.searchPlaceholder') }}
+              🔍 Search All Shipments
             </label>
-            <input
-              v-model="searchQuery"
-              type="text"
-              class="input-field"
-              :placeholder="$t('shipments.searchPlaceholder')"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-              {{ $t('shipments.filterBy') }}
-            </label>
-            <select v-model="filterColumn" class="input-field">
-              <option value="shipper_name">{{ $t('shipments.columns.shipperName') }}</option>
-              <option value="consignee_name">{{ $t('shipments.columns.consigneeName') }}</option>
-              <option value="shipper_city">{{ $t('shipments.columns.fromCity') }}</option>
-              <option value="consignee_city">{{ $t('shipments.columns.toCity') }}</option>
-              <option value="number_shipment">Shipment Number</option>
-              <option value="country_code">Country Code</option>
-              <option value="shipment_weight">Weight</option>
-              <option value="shipment_creation_date">Creation Date</option>
-            </select>
+            <div class="relative">
+              <input
+                v-model="searchQuery"
+                type="text"
+                class="input-field pr-10"
+                placeholder="Search across all columns (name, city, phone, address, shipment number, etc.)"
+                @keyup.enter="() => searchShipments()"
+                @input="onSearchInput"
+              />
+              <div class="absolute inset-y-0 right-0 flex items-center pr-3">
+                <button 
+                  v-if="searchQuery.trim()" 
+                  @click="() => clearSearch()" 
+                  class="text-gray-400 hover:text-gray-600"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+                <span v-else class="text-gray-400">🔍</span>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 mt-1 font-english">
+              Search across all columns including names, cities, addresses, phone numbers, shipment numbers, and more
+            </p>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
               {{ $t('shipments.dateFilter') }}
             </label>
-            <select v-model="dateFilter" class="input-field">
+            <select v-model="dateFilter" class="input-field" @change="onDateFilterChange">
               <option value="">{{ $t('common.total') }}</option>
               <option value="today">{{ $t('common.today') }}</option>
               <option value="week">{{ $t('common.week') }}</option>
@@ -51,19 +54,6 @@
               <option value="year">{{ $t('common.year') }}</option>
             </select>
           </div>
-           <div class="flex items-end space-x-2">
-             <button @click="() => searchShipments()" class="btn-primary flex-1">
-               {{ $t('common.search') }}
-             </button>
-             <button 
-               v-if="searchQuery.trim()" 
-               @click="() => clearSearch()" 
-               class="btn-secondary px-4"
-               title="Clear search and show all shipments"
-             >
-               ✕
-             </button>
-           </div>
         </div>
       </div>
 
@@ -85,7 +75,7 @@
            <div class="mb-4 text-sm text-gray-600 font-english">
              <p>📊 Showing all shipment columns. Scroll horizontally to view all data.</p>
              <p v-if="searchQuery.trim()" class="text-primary-600 font-medium">
-               🔍 Search Results: {{ pagination?.total || 0 }} results found for "{{ searchQuery }}" in {{ filterColumn }}
+               🔍 Search Results: {{ pagination?.total || 0 }} results found for "{{ searchQuery }}" across all columns
              </p>
            </div>
           <div class="overflow-x-auto border border-gray-200 rounded-lg">
@@ -190,10 +180,10 @@ const loading = ref(false)
 const shipments = ref([])
 const pagination = ref(null)
 const searchQuery = ref('')
-const filterColumn = ref('shipper_name')
 const dateFilter = ref('')
 const isSearching = ref(false)
 const error = ref('')
+const searchTimeout = ref(null)
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
@@ -269,8 +259,7 @@ const searchShipments = async (page = 1) => {
     }
     
     const params = {
-      column: filterColumn.value,
-      value: searchQuery.value,
+      query: searchQuery.value,
       page: pageNumber,
       limit: 20
     }
@@ -280,9 +269,9 @@ const searchShipments = async (page = 1) => {
     }
     
     console.log('🔍 Searching with params:', params)
-    console.log('🔍 API URL will be:', `/shipments/filter?${new URLSearchParams(params)}`)
+    console.log('🔍 API URL will be:', `/shipments/search?${new URLSearchParams(params)}`)
     
-    const response = await shippingAPI.filterShipments(params)
+    const response = await shippingAPI.searchShipments(params)
     console.log('✅ Search response:', response)
     shipments.value = response.data || []
     pagination.value = response.pagination || null
@@ -317,6 +306,31 @@ const clearSearch = () => {
   searchQuery.value = ''
   isSearching.value = false
   loadShipments()
+}
+
+const onSearchInput = () => {
+  // Clear existing timeout
+  if (searchTimeout.value) {
+    clearTimeout(searchTimeout.value)
+  }
+  
+  // Set new timeout for debounced search
+  searchTimeout.value = setTimeout(() => {
+    if (searchQuery.value.trim()) {
+      searchShipments(1)
+    } else {
+      isSearching.value = false
+      loadShipments()
+    }
+  }, 500) // 500ms delay for debouncing
+}
+
+const onDateFilterChange = () => {
+  if (searchQuery.value.trim()) {
+    searchShipments(1)
+  } else {
+    loadShipments(1)
+  }
 }
 
 onMounted(() => {
