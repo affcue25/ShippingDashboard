@@ -202,7 +202,7 @@ const buildDateParams = () => {
   if (datePreset.value === 'custom' && canApplyCustom.value) {
     return { start_date: dateFrom.value, end_date: dateTo.value }
   }
-  if (datePreset.value && datePreset.value !== 'total') {
+  if (datePreset.value) {
     return { date_filter: datePreset.value }
   }
   return {}
