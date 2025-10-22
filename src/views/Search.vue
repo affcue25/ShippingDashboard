@@ -54,28 +54,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  ID Number
-                </label>
-                <input
-                  v-model="searchForm.id"
-                  type="number"
-                  class="input-field"
-                  placeholder="Enter ID number"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Shipment Number
-                </label>
-                <input
-                  v-model="searchForm.shipmentNumber"
-                  type="text"
-                  class="input-field"
-                  placeholder="Enter shipment number"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
                   Reference Number
                 </label>
                 <input
@@ -87,31 +65,6 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Country Code
-                </label>
-                <select v-model="searchForm.countryCode" class="input-field">
-                  <option value="">All Countries</option>
-                  <option value="SA">Saudi Arabia (SA)</option>
-                  <option value="AE">UAE (AE)</option>
-                  <option value="KW">Kuwait (KW)</option>
-                  <option value="QA">Qatar (QA)</option>
-                  <option value="BH">Bahrain (BH)</option>
-                  <option value="OM">Oman (OM)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Number of Boxes
-                </label>
-                <input
-                  v-model="searchForm.numberOfBoxes"
-                  type="number"
-                  class="input-field"
-                  placeholder="Enter number of boxes"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
                   Shipment Description
                 </label>
                 <input
@@ -119,17 +72,6 @@
                   type="text"
                   class="input-field"
                   placeholder="Enter description"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  PDF Filename
-                </label>
-                <input
-                  v-model="searchForm.pdfFilename"
-                  type="text"
-                  class="input-field"
-                  placeholder="Enter PDF filename"
                 />
               </div>
             </div>
@@ -157,26 +99,6 @@
                 </label>
                 <input
                   v-model="searchForm.creationDateTo"
-                  type="date"
-                  class="input-field"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Processing Date From
-                </label>
-                <input
-                  v-model="searchForm.processingDateFrom"
-                  type="date"
-                  class="input-field"
-                />
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Processing Date To
-                </label>
-                <input
-                  v-model="searchForm.processingDateTo"
                   type="date"
                   class="input-field"
                 />
@@ -609,19 +531,12 @@ const clearAllColumns = () => {
 
 const searchForm = ref({
   // Shipment Information
-  id: '',
-  shipmentNumber: '',
   referenceNumber: '',
-  countryCode: '',
-  numberOfBoxes: '',
   description: '',
-  pdfFilename: '',
   
   // Dates
   creationDateFrom: '',
   creationDateTo: '',
-  processingDateFrom: '',
-  processingDateTo: '',
   
   // Weight and Payment
   minWeight: '',
@@ -691,12 +606,6 @@ const validateSearchForm = () => {
     }
   }
   
-  if (searchForm.value.processingDateFrom && searchForm.value.processingDateTo) {
-    if (new Date(searchForm.value.processingDateFrom) > new Date(searchForm.value.processingDateTo)) {
-      error.value = 'Processing Date From must be earlier than or equal to Processing Date To.'
-      return false
-    }
-  }
   
   // Validate weight range
   if (searchForm.value.minWeight && searchForm.value.maxWeight) {
@@ -725,19 +634,12 @@ const performSearch = async (page = 1) => {
     }
     
     // Shipment Information
-    if (searchForm.value.id) params.id = searchForm.value.id
-    if (searchForm.value.shipmentNumber) params.shipment_number = searchForm.value.shipmentNumber
     if (searchForm.value.referenceNumber) params.reference_number = searchForm.value.referenceNumber
-    if (searchForm.value.countryCode) params.country_code = searchForm.value.countryCode
-    if (searchForm.value.numberOfBoxes) params.number_of_boxes = searchForm.value.numberOfBoxes
     if (searchForm.value.description) params.description = searchForm.value.description
-    if (searchForm.value.pdfFilename) params.pdf_filename = searchForm.value.pdfFilename
     
     // Dates
     if (searchForm.value.creationDateFrom) params.creation_date_from = searchForm.value.creationDateFrom
     if (searchForm.value.creationDateTo) params.creation_date_to = searchForm.value.creationDateTo
-    if (searchForm.value.processingDateFrom) params.processing_date_from = searchForm.value.processingDateFrom
-    if (searchForm.value.processingDateTo) params.processing_date_to = searchForm.value.processingDateTo
     
     // Weight and Payment
     if (searchForm.value.minWeight !== '' && searchForm.value.minWeight !== null && searchForm.value.minWeight !== undefined) {
@@ -810,19 +712,12 @@ watch(pagination, (newPagination) => {
 const clearForm = () => {
   searchForm.value = {
     // Shipment Information
-    id: '',
-    shipmentNumber: '',
     referenceNumber: '',
-    countryCode: '',
-    numberOfBoxes: '',
     description: '',
-    pdfFilename: '',
     
     // Dates
     creationDateFrom: '',
     creationDateTo: '',
-    processingDateFrom: '',
-    processingDateTo: '',
     
     // Weight and Payment
     minWeight: '',
