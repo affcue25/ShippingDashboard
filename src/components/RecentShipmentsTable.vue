@@ -50,7 +50,7 @@ const props = defineProps({
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   try {
-    return format(new Date(dateString), 'MMM dd, yyyy')
+    return format(new Date(dateString), 'dd-MM-yyyy')
   } catch {
     if(dateString != '' && dateString != 'NULL' && dateString != null && dateString != undefined && dateString != 'N/A' && dateString != 'NaN') return dateString
     return 'N/A'

@@ -662,11 +662,11 @@ const formatDate = (dateString) => {
         const fullYear = '20' + year
         const monthNum = monthMap[month] || '01'
         const isoDate = `${fullYear}-${monthNum}-${day}`
-        return format(new Date(isoDate), 'MMM dd, yyyy')
+        return format(new Date(isoDate), 'dd-MM-yyyy')
       }
     }
     // Handle standard date formats
-    return format(new Date(dateString), 'MMM dd, yyyy')
+    return format(new Date(dateString), 'dd-MM-yyyy')
   } catch {
     return dateString || 'N/A'
   }
