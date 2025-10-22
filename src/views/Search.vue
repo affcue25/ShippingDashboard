@@ -138,15 +138,13 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
-                  Cash on Delivery (COD) Amount
+                  Cash on Delivery (COD)
                 </label>
-                <input
-                  v-model.number="searchForm.cod"
-                  type="number"
-                  step="0.01"
-                  class="input-field"
-                  placeholder="Enter COD amount"
-                />
+                <select v-model="searchForm.cod" class="input-field">
+                  <option value="">All</option>
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
               </div>
             </div>
           </div>
@@ -299,6 +297,9 @@
                   <button @click="selectAllColumns" class="btn-secondary text-xs px-2 py-1">Select All</button>
                   <button @click="clearAllColumns" class="btn-secondary text-xs px-2 py-1">Clear</button>
                 </div>
+                <div class="mt-2">
+                  <button @click="resetToDefaultColumns" class="btn-secondary text-xs px-2 py-1 w-full">Reset to Default</button>
+                </div>
               </div>
             </div>
             <button v-if="results.length > 0" :disabled="visibleColumns.length === 0" @click="exportResults" class="btn-success disabled:opacity-50 disabled:cursor-not-allowed">
@@ -330,7 +331,20 @@
             <table class="min-w-full divide-y divide-gray-200" style="min-width: 2000px;">
               <thead class="bg-gray-50">
                 <tr>
-                  <th v-for="col in visibleColumns" :key="col.key" class="table-header">{{ col.label }}</th>
+                  <th 
+                    v-for="col in visibleColumns" 
+                    :key="col.key" 
+                    :class="[
+                      'table-header cursor-pointer hover:bg-gray-100 select-none transition-colors',
+                      sortColumn.value === col.key ? 'bg-primary-50 text-primary-700' : ''
+                    ]"
+                    @click="handleSort(col.key)"
+                  >
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium">{{ col.label }}</span>
+                      <span class="ml-2 text-sm font-bold">{{ getSortIcon(col.key) }}</span>
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
@@ -498,6 +512,11 @@ const editingSearch = ref(null)
 
 // Column selection state
 const showColumnsMenu = ref(false)
+
+// Sorting state
+const sortColumn = ref('')
+const sortDirection = ref('') // 'asc', 'desc', or ''
+
 const allColumns = ref([
   { key: 'id', label: 'ID' },
   { key: 'number_shipment', label: 'Shipment Number' },
@@ -519,14 +538,131 @@ const allColumns = ref([
   { key: 'pdf_filename', label: 'PDF Filename' },
   { key: 'processing_date', label: 'Processing Date', formatter: (v) => formatDate(v) }
 ])
-const selectedColumnKeys = ref(allColumns.value.map(c => c.key))
+// Load saved column selection from localStorage, default to all columns
+const getSavedColumnSelection = () => {
+  try {
+    const saved = localStorage.getItem('search-column-selection')
+    if (saved) {
+      const savedKeys = JSON.parse(saved)
+      // Validate that all saved keys still exist in allColumns
+      const validKeys = savedKeys.filter(key => allColumns.value.some(col => col.key === key))
+      return validKeys.length > 0 ? validKeys : allColumns.value.map(c => c.key)
+    }
+  } catch (error) {
+    console.warn('Error loading saved column selection:', error)
+  }
+  return allColumns.value.map(c => c.key)
+}
+
+const selectedColumnKeys = ref(getSavedColumnSelection())
 const visibleColumns = computed(() => allColumns.value.filter(c => selectedColumnKeys.value.includes(c.key)))
+
+// Save column selection to localStorage
+const saveColumnSelection = () => {
+  try {
+    localStorage.setItem('search-column-selection', JSON.stringify(selectedColumnKeys.value))
+  } catch (error) {
+    console.warn('Error saving column selection:', error)
+  }
+}
+
+// Watch for changes in selectedColumnKeys and save to localStorage
+watch(selectedColumnKeys, () => {
+  saveColumnSelection()
+}, { deep: true })
 
 const selectAllColumns = () => {
   selectedColumnKeys.value = allColumns.value.map(c => c.key)
 }
 const clearAllColumns = () => {
   selectedColumnKeys.value = []
+}
+const resetToDefaultColumns = () => {
+  // Reset to all columns and clear localStorage
+  selectedColumnKeys.value = allColumns.value.map(c => c.key)
+  try {
+    localStorage.removeItem('search-column-selection')
+  } catch (error) {
+    console.warn('Error clearing saved column selection:', error)
+  }
+}
+
+// Sorting functions
+const handleSort = (columnKey) => {
+  if (sortColumn.value === columnKey) {
+    // Cycle through: asc -> desc -> default
+    if (sortDirection.value === 'asc') {
+      sortDirection.value = 'desc'
+    } else if (sortDirection.value === 'desc') {
+      sortDirection.value = ''
+      sortColumn.value = ''
+    } else {
+      sortDirection.value = 'asc'
+    }
+  } else {
+    // New column, start with ascending
+    sortColumn.value = columnKey
+    sortDirection.value = 'asc'
+  }
+  
+  // Apply sorting to results
+  sortResults()
+}
+
+const sortResults = () => {
+  if (!sortColumn.value || !sortDirection.value) {
+    return // No sorting applied
+  }
+  
+  results.value.sort((a, b) => {
+    let aVal = a[sortColumn.value]
+    let bVal = b[sortColumn.value]
+    
+    // Handle null/undefined values
+    if (aVal === null || aVal === undefined || aVal === '') aVal = ''
+    if (bVal === null || bVal === undefined || bVal === '') bVal = ''
+    
+    // Handle numeric values
+    const aNum = parseFloat(aVal)
+    const bNum = parseFloat(bVal)
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      return sortDirection.value === 'asc' ? aNum - bNum : bNum - aNum
+    }
+    
+    // Handle date values (for creation_date and processing_date)
+    if (sortColumn.value === 'shipment_creation_date' || sortColumn.value === 'processing_date') {
+      const aDate = new Date(aVal)
+      const bDate = new Date(bVal)
+      if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+        return sortDirection.value === 'asc' ? aDate - bDate : bDate - aDate
+      }
+    }
+    
+    // Handle string values
+    const aStr = String(aVal).toLowerCase()
+    const bStr = String(bVal).toLowerCase()
+    
+    if (sortDirection.value === 'asc') {
+      return aStr.localeCompare(bStr)
+    } else {
+      return bStr.localeCompare(aStr)
+    }
+  })
+}
+
+const getSortIcon = (columnKey) => {
+  if (sortColumn.value !== columnKey) {
+    return '↕️' // Default sort icon
+  }
+  
+  switch (sortDirection.value) {
+    case 'asc':
+      return '↑' // Ascending
+    case 'desc':
+      return '↓' // Descending
+    default:
+      return '↕️' // Default
+  }
 }
 
 const searchForm = ref({
@@ -648,7 +784,7 @@ const performSearch = async (page = 1) => {
     if (searchForm.value.maxWeight !== '' && searchForm.value.maxWeight !== null && searchForm.value.maxWeight !== undefined) {
       params.max_weight = searchForm.value.maxWeight
     }
-    if (searchForm.value.cod !== '' && searchForm.value.cod !== null && searchForm.value.cod !== undefined) {
+    if (searchForm.value.cod) {
       params.cod = searchForm.value.cod
     }
     
@@ -671,6 +807,10 @@ const performSearch = async (page = 1) => {
     results.value = response.data || []
     pagination.value = response.pagination || null
     showFilters.value = false
+    
+    // Reset sorting when new results are loaded
+    sortColumn.value = ''
+    sortDirection.value = ''
     // Update page input to match current page
     if (pagination.value) {
       pageInput.value = pagination.value.page

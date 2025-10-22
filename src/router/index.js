@@ -4,6 +4,7 @@ import Shipments from '../views/Shipments.vue'
 import Search from '../views/Search.vue'
 import Analytics from '../views/Analytics.vue'
 import Reports from '../views/Reports.vue'
+import TopCustomers from '../views/TopCustomers.vue'
 
 const routes = [
   {
@@ -44,6 +45,14 @@ const routes = [
     component: Reports,
     meta: {
       title: 'Reports'
+    }
+  },
+  {
+    path: '/top-customers',
+    name: 'TopCustomers',
+    component: TopCustomers,
+    meta: {
+      title: 'Top Customers'
     }
   }
 ]

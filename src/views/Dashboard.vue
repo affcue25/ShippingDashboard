@@ -91,7 +91,7 @@
               {{ activeFilterLabel + ' ' + $t('dashboard.topCustomers') }}
             </h3>
             <router-link
-              to="/analytics"
+              to="/top-customers"
               class="text-primary-600 hover:text-primary-700 text-sm font-medium font-english"
             >
               {{ $t('dashboard.viewAll') }}
