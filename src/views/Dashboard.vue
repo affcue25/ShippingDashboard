@@ -53,7 +53,7 @@
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
-          :title="$t('dashboard.todayShipments')"
+          :title="activeFilterLabel + ' ' + $t('dashboard.todayShipments')"
           :value="stats.todayShipments"
           icon="truck"
           color="primary"
@@ -67,14 +67,14 @@
           :loading="loading"
         />
         <StatCard
-          :title="$t('dashboard.averageWeight')"
+          :title="activeFilterLabel + ' ' + $t('dashboard.averageWeight')"
           :value="`${stats.averageWeight} kg`"
           icon="scale"
           color="warning"
           :loading="loading"
         />
         <StatCard
-          :title="$t('dashboard.topCities')"
+          :title="activeFilterLabel + ' ' + $t('dashboard.topCities')"
           :value="stats.topCitiesCount"
           icon="location"
           color="danger"
@@ -88,7 +88,7 @@
         <div class="card">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900 font-english">
-              {{ $t('dashboard.topCustomers') }}
+              {{ activeFilterLabel + ' ' + $t('dashboard.topCustomers') }}
             </h3>
             <router-link
               to="/analytics"
@@ -105,7 +105,7 @@
         <div class="card">
           <div class="flex items-center justify-between mb-6">
             <h3 class="text-lg font-semibold text-gray-900 font-english">
-              {{ $t('dashboard.recentShipments') }}
+              {{ activeFilterLabel + ' ' + $t('dashboard.recentShipments') }}
             </h3>
             <router-link
               to="/shipments"
@@ -122,7 +122,7 @@
       <div class="card mb-8">
         <div class="flex items-center justify-between mb-6">
           <h3 class="text-lg font-semibold text-gray-900 font-english">
-            {{ $t('dashboard.topCitiesTable') }}
+            {{ activeFilterLabel + ' ' + $t('dashboard.topCitiesTable') }}
           </h3>
           <router-link
             to="/analytics"
@@ -216,11 +216,13 @@ const loadDashboardData = async () => {
     // Load all dashboard data in parallel
     const [
       totalShipmentsRes,
+      durationShipmentsRes,
       averageWeightRes,
       topCitiesRes,
       recentShipmentsRes,
       topCustomersRes
     ] = await Promise.all([
+      shippingAPI.getTotalShipments({ date_filter: 'total' }),
       shippingAPI.getTotalShipments({ ...dateParams }),
       shippingAPI.getAverageWeight({ ...dateParams }),
       shippingAPI.getTopCities({ limit: 5, ...dateParams }),
@@ -230,8 +232,8 @@ const loadDashboardData = async () => {
 
     // Update stats
     stats.value = {
-      todayShipments: totalShipmentsRes.data?.total || 0,
       totalShipments: totalShipmentsRes.data?.total || 0,
+      todayShipments: durationShipmentsRes.data?.total || 0,
       averageWeight: Math.round(averageWeightRes.data?.average_weight || 0),
       topCitiesCount: topCitiesRes.data?.length || 0
     }
