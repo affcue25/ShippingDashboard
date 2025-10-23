@@ -224,6 +224,32 @@ export const shippingAPI = {
     })
   },
 
+  // Custom Reports
+  getCustomReports: () => api.get('/custom-reports'),
+  
+  getCustomReport: (id) => api.get(`/custom-reports/${id}`),
+  
+  createCustomReport: (reportData) => api.post('/custom-reports', reportData),
+  
+  updateCustomReport: (id, reportData) => api.put(`/custom-reports/${id}`, reportData),
+  
+  deleteCustomReport: (id) => api.delete(`/custom-reports/${id}`),
+  
+  runCustomReport: (id) => api.post(`/custom-reports/${id}/run`),
+  
+  getReportTemplates: () => api.get('/custom-reports/templates'),
+
+  // Scheduled Reports
+  getScheduledReports: () => api.get('/scheduled-reports'),
+  
+  createScheduledReport: (scheduleData) => api.post('/scheduled-reports', scheduleData),
+  
+  updateScheduledReport: (id, scheduleData) => api.put(`/scheduled-reports/${id}`, scheduleData),
+  
+  deleteScheduledReport: (id) => api.delete(`/scheduled-reports/${id}`),
+  
+  toggleScheduledReport: (id, isActive) => api.put(`/scheduled-reports/${id}/toggle`, { is_active: isActive }),
+
   // Saved Searches
   getSavedSearches: () => api.get('/saved-searches'),
   
