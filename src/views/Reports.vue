@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-gray-50" @click="showExportMenu = false">
     <div class="px-4 sm:px-6 lg:px-8 py-8">
       <!-- Header -->
       <div class="mb-8">
@@ -162,6 +162,150 @@
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
         <p class="text-gray-600 font-english">Loading reports...</p>
       </div>
+
+      <!-- Template Data Table Section -->
+      <div v-if="templateData.length > 0" class="mt-8">
+        <div class="card">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900 font-english">
+                {{ currentTemplateData?.report_name || 'Template Data' }}
+              </h2>
+              <p class="text-sm text-gray-600 font-english mt-1">
+                {{ currentTemplateData?.description || 'Data from selected template' }}
+              </p>
+            </div>
+            <div class="flex items-center gap-3">
+              <!-- Pagination Size Selector -->
+              <div class="flex items-center gap-2">
+                <label class="text-sm text-gray-600 font-english">Rows per page:</label>
+                <select 
+                  v-model="paginationSize" 
+                  @change="handlePaginationChange"
+                  class="input-field text-sm py-1 px-2 w-20"
+                >
+                  <option value="20">20</option>
+                  <option value="30">30</option>
+                  <option value="50">50</option>
+                </select>
+              </div>
+              
+              <!-- Export Dropdown -->
+              <div class="relative" @click.stop>
+                <button 
+                  @click="showExportMenu = !showExportMenu"
+                  :disabled="exporting"
+                  class="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg v-if="!exporting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                  <div v-else class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  {{ exporting ? 'Exporting...' : 'Export All Data' }}
+                  <svg v-if="!exporting" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                
+                <!-- Export Menu Dropdown -->
+                <div 
+                  v-if="showExportMenu && !exporting"
+                  class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200"
+                >
+                  <div class="py-1">
+                    <button 
+                      @click="exportAllData('csv')"
+                      class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-english"
+                    >
+                      <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                      </svg>
+                      Export as CSV
+                    </button>
+                    <button 
+                      @click="exportAllData('pdf')"
+                      class="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-english"
+                    >
+                      <svg class="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                      </svg>
+                      Export as PDF
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Table -->
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th 
+                    v-for="column in tableColumns" 
+                    :key="column.key"
+                    class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider font-english"
+                  >
+                    {{ column.label }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr v-for="(row, index) in paginatedData" :key="index" class="hover:bg-gray-50">
+                  <td 
+                    v-for="column in tableColumns" 
+                    :key="column.key"
+                    class="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                  >
+                    {{ formatCellValue(row[column.key], column.key) }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination Controls -->
+          <div class="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+            <div class="text-sm text-gray-700 font-english">
+              Showing {{ (currentPage - 1) * paginationSize + 1 }} to {{ Math.min(currentPage * paginationSize, templateData.length) }} of {{ templateData.length }} results
+            </div>
+            <div class="flex items-center gap-2">
+              <button 
+                @click="goToPage(currentPage - 1)"
+                :disabled="currentPage === 1"
+                class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-english"
+              >
+                Previous
+              </button>
+              
+              <div class="flex items-center gap-1">
+                <button 
+                  v-for="page in visiblePages" 
+                  :key="page"
+                  @click="goToPage(page)"
+                  :class="[
+                    'px-3 py-1 text-sm border rounded-md font-english',
+                    page === currentPage 
+                      ? 'bg-primary-600 text-white border-primary-600' 
+                      : 'border-gray-300 hover:bg-gray-50'
+                  ]"
+                >
+                  {{ page }}
+                </button>
+              </div>
+              
+              <button 
+                @click="goToPage(currentPage + 1)"
+                :disabled="currentPage === totalPages"
+                class="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed font-english"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Create/Edit Report Modal -->
@@ -221,6 +365,51 @@
               ></textarea>
             </div>
 
+            <!-- SQL Query Editor -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-sm font-medium text-gray-700 font-english">
+                  SQL Query
+                </label>
+                <div class="flex items-center gap-2">
+                  <button 
+                    type="button"
+                    @click="generateSQLFromSelections"
+                    class="text-xs text-primary-600 hover:text-primary-800 font-english"
+                  >
+                    Regenerate from selections
+                  </button>
+                  <button 
+                    type="button"
+                    @click="showSQLHelp = !showSQLHelp"
+                    class="text-xs text-gray-500 hover:text-gray-700 font-english"
+                  >
+                    {{ showSQLHelp ? 'Hide' : 'Show' }} help
+                  </button>
+                </div>
+              </div>
+              
+              <!-- SQL Help -->
+              <div v-if="showSQLHelp" class="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                <p class="text-xs text-blue-800 font-english mb-2">
+                  <strong>SQL Query Tips:</strong>
+                </p>
+                <ul class="text-xs text-blue-700 font-english space-y-1">
+                  <li>• Use the "Regenerate from selections" button to auto-generate SQL based on your column and filter selections</li>
+                  <li>• You can manually edit the SQL query for advanced customization</li>
+                  <li>• Available columns: id, number_shipment, shipper_name, consignee_name, shipment_creation_date, etc.</li>
+                  <li>• Use WHERE clauses for filtering: WHERE shipper_name LIKE '%value%'</li>
+                </ul>
+              </div>
+              
+              <textarea 
+                v-model="reportForm.sql_query"
+                class="input-field font-mono text-sm"
+                rows="8"
+                placeholder="SELECT * FROM shipments WHERE ..."
+              ></textarea>
+            </div>
+
             <!-- Filters -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
@@ -264,17 +453,37 @@
                         placeholder="Filter by shipper city"
                       />
                     </div>
-                    <div>
-                      <label class="block text-sm text-gray-600 mb-1 font-english">Consignee City</label>
-                      <input 
-                        v-model="reportForm.filters.consignee_city"
-                        type="text" 
-                        class="input-field"
-                        placeholder="Filter by consignee city"
-                      />
-                    </div>
-              </div>
-            </div>
+                     <div>
+                       <label class="block text-sm text-gray-600 mb-1 font-english">Consignee City</label>
+                       <input 
+                         v-model="reportForm.filters.consignee_city"
+                         type="text" 
+                         class="input-field"
+                         placeholder="Filter by consignee city"
+                       />
+                     </div>
+                     <div>
+                       <label class="block text-sm text-gray-600 mb-1 font-english">Min Weight (Kg)</label>
+                       <input 
+                         v-model="reportForm.filters.min_weight"
+                         type="number" 
+                         step="0.1"
+                         class="input-field"
+                         placeholder="Minimum weight"
+                       />
+                     </div>
+                     <div>
+                       <label class="block text-sm text-gray-600 mb-1 font-english">Max Weight (Kg)</label>
+                       <input 
+                         v-model="reportForm.filters.max_weight"
+                         type="number" 
+                         step="0.1"
+                         class="input-field"
+                         placeholder="Maximum weight"
+                       />
+                     </div>
+               </div>
+             </div>
 
             <!-- Columns -->
             <div>
@@ -603,6 +812,13 @@ const activeReportMenu = ref(null)
 const exporting = ref(false)
 const currentTemplate = ref(null)
 const templateParameters = ref({})
+const showSQLHelp = ref(false)
+
+// Table data and pagination
+const templateData = ref([])
+const currentTemplateData = ref(null)
+const currentPage = ref(1)
+const paginationSize = ref(20)
 
 // Form data
 const reportForm = ref({
@@ -631,16 +847,16 @@ const availableColumns = ref([
   { key: 'number_shipment', label: 'Shipment Number' },
   { key: 'country_code', label: 'Country Code' },
   { key: 'shipper_city', label: 'Shipper City' },
-  { key: 'shipper_phone_number', label: 'Shipper Phone' },
+  { key: 'shipper_phone', label: 'Shipper Phone' },
   { key: 'shipper_name', label: 'Shipper Name' },
   { key: 'shipper_address', label: 'Shipper Address' },
   { key: 'consignee_city', label: 'Consignee City' },
-  { key: 'consignee_phone_number', label: 'Consignee Phone' },
+  { key: 'consignee_phone', label: 'Consignee Phone' },
   { key: 'consignee_name', label: 'Consignee Name' },
   { key: 'consignee_address', label: 'Consignee Address' },
   { key: 'shipment_reference_number', label: 'Reference Number' },
   { key: 'shipment_creation_date', label: 'Creation Date' },
-  { key: 'cod_cash_on_delivery', label: 'COD (Cash on Delivery)' },
+  { key: 'cod', label: 'COD (Cash on Delivery)' },
   { key: 'shipment_weight', label: 'Weight' },
   { key: 'number_of_shipment_boxes', label: 'Number of Boxes' },
   { key: 'shipment_description', label: 'Description' },
@@ -653,6 +869,58 @@ const visibleColumns = computed(() => {
   return availableColumns.value.filter(col => 
     currentReport.value.columns.includes(col.key)
   )
+})
+
+// Table pagination computed properties
+const totalPages = computed(() => {
+  return Math.ceil(templateData.value.length / paginationSize.value)
+})
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * paginationSize.value
+  const end = start + paginationSize.value
+  return templateData.value.slice(start, end)
+})
+
+const visiblePages = computed(() => {
+  const pages = []
+  const total = totalPages.value
+  const current = currentPage.value
+  
+  // Show up to 5 pages around current page
+  let start = Math.max(1, current - 2)
+  let end = Math.min(total, current + 2)
+  
+  // Adjust if we're near the beginning or end
+  if (end - start < 4) {
+    if (start === 1) {
+      end = Math.min(total, start + 4)
+    } else {
+      start = Math.max(1, end - 4)
+    }
+  }
+  
+  for (let i = start; i <= end; i++) {
+    pages.push(i)
+  }
+  
+  return pages
+})
+
+const tableColumns = computed(() => {
+  if (templateData.value.length === 0) return []
+  
+  // Get columns from the first row
+  const firstRow = templateData.value[0]
+  const columns = Object.keys(firstRow).map(key => {
+    const column = availableColumns.value.find(col => col.key === key)
+    return {
+      key: key,
+      label: column ? column.label : key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+    }
+  })
+  
+  return columns
 })
 
 // Methods
@@ -796,13 +1064,26 @@ const applyTemplate = (template, customParams = {}) => {
     sqlQuery = sqlQuery.replace(new RegExp(`{${param}}`, 'g'), value)
   })
   
+  // Parse SQL to extract columns and date conditions
+  const extractedColumns = parseSQLColumns(sqlQuery)
+  const extractedDateFilter = parseSQLDateConditions(sqlQuery)
+  
+  // Initialize form with template defaults
   reportForm.value = {
     report_name: template.report_name || template.title,
     description: template.description,
     sql_query: sqlQuery,
     report_type: template.parameters?.report_type || template.report_type || 'custom',
-    filters: { ...(template.parameters?.filters || template.filters || {}) },
-    columns: [...(template.parameters?.columns || template.columns || [])],
+    filters: { 
+      date_filter: extractedDateFilter || '',
+      shipper_name: '',
+      shipper_city: '',
+      consignee_name: '',
+      consignee_city: '',
+      min_weight: '',
+      max_weight: ''
+    },
+    columns: extractedColumns.length > 0 ? extractedColumns : [...(template.parameters?.columns || template.columns || [])],
     chart_config: { ...(template.parameters?.chart_config || template.chart_config || {}) },
     schedule_config: {},
     is_public: false
@@ -812,8 +1093,27 @@ const applyTemplate = (template, customParams = {}) => {
   showCreateModal.value = true
 }
 
-const viewReport = (report) => {
-  runReport(report)
+const viewReport = async (report) => {
+  try {
+    loading.value = true
+    
+    // Run the report to get data
+    const response = await shippingAPI.runCustomReport(report.id)
+    
+    templateData.value = response.data || []
+    currentTemplateData.value = {
+      report_name: report.report_name,
+      description: report.description
+    }
+    currentPage.value = 1 // Reset to first page
+    
+  } catch (error) {
+    console.error('Error fetching report data:', error)
+    templateData.value = []
+    currentTemplateData.value = null
+  } finally {
+    loading.value = false
+  }
 }
 
 const exportResults = async (format = 'csv') => {
@@ -847,6 +1147,202 @@ const applyTemplateWithParameters = () => {
   }
 }
 
+// Table methods
+
+const handlePaginationChange = () => {
+  currentPage.value = 1 // Reset to first page when changing page size
+}
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+  }
+}
+
+const exportAllData = async (format = 'csv') => {
+  try {
+    exporting.value = true
+    showExportMenu.value = false
+    
+    // Generate filename based on format
+    const reportName = currentTemplateData.value?.report_name || 'template_data'
+    const cleanName = reportName
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+    
+    const filename = `${cleanName}_all_data.${format}`
+    
+    const response = await shippingAPI.exportData({
+      format: format,
+      data: templateData.value,
+      filename: filename,
+      report_name: reportName,
+      columns: tableColumns.value
+    })
+    
+    // Create download link
+    const link = document.createElement('a')
+    link.href = `http://136.243.133.165${response.download_url}`
+    link.download = response.filename || filename
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    
+  } catch (error) {
+    console.error('Error exporting data:', error)
+    alert('Error exporting data: ' + (error.response?.data?.error || error.message))
+  } finally {
+    exporting.value = false
+  }
+}
+
+const parseSQLColumns = (sqlQuery) => {
+  // Extract column names from SELECT statement (handle multi-line)
+  const selectMatch = sqlQuery.match(/SELECT\s+([\s\S]*?)\s+FROM/i)
+  if (!selectMatch) return []
+  
+  const selectClause = selectMatch[1]
+  const columns = []
+  
+  // Split by comma and clean up each column
+  const columnParts = selectClause.split(',').map(col => col.trim())
+  
+  columnParts.forEach(part => {
+    // Handle AS aliases and functions
+    if (part.includes(' AS ')) {
+      const columnPart = part.split(' AS ')[0].trim()
+      // Extract column name from functions like COUNT(*)
+      if (columnPart.includes('(') && columnPart.includes(')')) {
+        // Skip aggregate functions for now
+        return
+      }
+      // Remove quotes and get the actual column name
+      const cleanColumn = columnPart.replace(/['"]/g, '').trim()
+      if (cleanColumn && !cleanColumn.includes(' ') && !cleanColumn.includes('(')) {
+        columns.push(cleanColumn)
+      }
+    } else {
+      // Direct column reference
+      const cleanColumn = part.replace(/['"]/g, '').trim()
+      if (cleanColumn && !cleanColumn.includes(' ') && !cleanColumn.includes('(')) {
+        columns.push(cleanColumn)
+      }
+    }
+  })
+  
+  return columns
+}
+
+const parseSQLDateConditions = (sqlQuery) => {
+  // Look for date conditions in WHERE clause
+  const whereMatch = sqlQuery.match(/WHERE\s+(.*?)(?:\s+GROUP\s+BY|\s+ORDER\s+BY|\s+LIMIT|$)/i)
+  if (!whereMatch) return null
+  
+  const whereClause = whereMatch[1]
+  
+  // Check for date patterns
+  if (whereClause.includes('shipment_creation_date')) {
+    // Look for specific date patterns
+    if (whereClause.includes('>=')) {
+      return 'month' // Default to month for >= conditions
+    } else if (whereClause.includes('=')) {
+      return 'today'
+    }
+  }
+  
+  return null
+}
+
+const generateSQLFromSelections = () => {
+  // Get selected columns with capitalized short names
+  const selectedColumns = reportForm.value.columns.length > 0 
+    ? reportForm.value.columns.map(col => {
+        // Map to capitalized short names
+        const columnMappings = {
+          'shipper_phone': 'shipper_phone AS "Phone"',
+          'shipper_name': 'shipper_name AS "Name"',
+          'consignee_name': 'consignee_name AS "Consignee"',
+          'consignee_city': 'consignee_city AS "City"',
+          'shipment_creation_date': 'shipment_creation_date AS "Date"',
+          'shipment_weight': 'shipment_weight AS "Weight"',
+          'cod': 'cod AS "COD"',
+          'number_of_shipment_boxes': 'number_of_shipment_boxes AS "Boxes"',
+          'shipment_reference_number': 'shipment_reference_number AS "Reference"'
+        }
+        return columnMappings[col] || col
+      }).join(',\n    ')
+    : '*'
+  
+  // Build WHERE clauses from filters
+  const whereConditions = []
+  const filters = reportForm.value.filters
+  
+  if (filters.shipper_name) {
+    whereConditions.push(`shipper_name LIKE '%${filters.shipper_name}%'`)
+  }
+  if (filters.consignee_name) {
+    whereConditions.push(`consignee_name LIKE '%${filters.consignee_name}%'`)
+  }
+  if (filters.shipper_city) {
+    whereConditions.push(`shipper_city LIKE '%${filters.shipper_city}%'`)
+  }
+  if (filters.consignee_city) {
+    whereConditions.push(`consignee_city LIKE '%${filters.consignee_city}%'`)
+  }
+  if (filters.min_weight) {
+    whereConditions.push(`CAST(REPLACE(shipment_weight, ' Kg', '') AS DECIMAL) >= ${filters.min_weight}`)
+  }
+  if (filters.max_weight) {
+    whereConditions.push(`CAST(REPLACE(shipment_weight, ' Kg', '') AS DECIMAL) <= ${filters.max_weight}`)
+  }
+  
+  // Add date filter
+  if (filters.date_filter) {
+    const now = new Date()
+    let dateCondition = ''
+    
+    switch (filters.date_filter) {
+      case 'today':
+        const today = now.toLocaleDateString('en-GB').replace(/\//g, '-')
+        dateCondition = `shipment_creation_date = '${today}'`
+        break
+      case 'week':
+        const weekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000))
+        const weekAgoStr = weekAgo.toLocaleDateString('en-GB').replace(/\//g, '-')
+        dateCondition = `shipment_creation_date >= '${weekAgoStr}'`
+        break
+      case 'month':
+        const monthAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000))
+        const monthAgoStr = monthAgo.toLocaleDateString('en-GB').replace(/\//g, '-')
+        dateCondition = `shipment_creation_date >= '${monthAgoStr}'`
+        break
+      case 'year':
+        const yearAgo = new Date(now.getTime() - (365 * 24 * 60 * 60 * 1000))
+        const yearAgoStr = yearAgo.toLocaleDateString('en-GB').replace(/\//g, '-')
+        dateCondition = `shipment_creation_date >= '${yearAgoStr}'`
+        break
+    }
+    
+    if (dateCondition) {
+      whereConditions.push(dateCondition)
+    }
+  }
+  
+  // Build the complete SQL query
+  let sqlQuery = `SELECT ${selectedColumns}\nFROM shipments`
+  
+  if (whereConditions.length > 0) {
+    sqlQuery += `\nWHERE ${whereConditions.join('\n  AND ')}`
+  }
+  
+  // Add ORDER BY and LIMIT
+  sqlQuery += `\nORDER BY id DESC\nLIMIT 1000`
+  
+  // Update the form with generated SQL
+  reportForm.value.sql_query = sqlQuery
+}
+
 const formatParameterLabel = (paramName) => {
   const labels = {
     'phone_number': 'Phone Number',
@@ -861,6 +1357,8 @@ const closeModal = () => {
   showResultsModal.value = false
   showTemplatesModal.value = false
   showParameterModal.value = false
+  showSQLHelp.value = false
+  showExportMenu.value = false
   currentReport.value = null
   currentTemplate.value = null
   templateParameters.value = {}
