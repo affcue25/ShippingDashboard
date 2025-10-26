@@ -371,7 +371,7 @@
                 <label class="block text-sm font-medium text-gray-700 font-english">
                   SQL Query
                 </label>
-                <div class="flex items-center gap-2">
+                <!-- <div class="flex items-center gap-2">
                   <button 
                     type="button"
                     @click="generateSQLFromSelections"
@@ -386,7 +386,7 @@
                   >
                     {{ showSQLHelp ? 'Hide' : 'Show' }} help
                   </button>
-                </div>
+                </div> -->
               </div>
               
               <!-- SQL Help -->
@@ -411,7 +411,7 @@
             </div>
 
             <!-- Filters -->
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
                 Filters
               </label>
@@ -483,10 +483,10 @@
                        />
                      </div>
                </div>
-             </div>
+             </div> -->
 
             <!-- Columns -->
-            <div>
+            <!-- <div>
               <label class="block text-sm font-medium text-gray-700 mb-2 font-english">
                 Select Columns to Display
               </label>
@@ -505,7 +505,7 @@
                   <span class="font-english">{{ column.label }}</span>
                 </label>
               </div>
-            </div>
+            </div> -->
 
             <!-- Actions -->
             <div class="flex justify-end space-x-3 pt-4 border-t">
@@ -956,10 +956,10 @@ const saveReport = async () => {
       return
     }
     
-    if (reportForm.value.columns.length === 0) {
-      alert('Please select at least one column to display')
-      return
-    }
+    // if (reportForm.value.columns.length === 0) {
+    //   alert('Please select at least one column to display')
+    //   return
+    // }
     
     if (showEditModal.value) {
       await shippingAPI.updateCustomReport(currentReport.value.id, reportForm.value)
